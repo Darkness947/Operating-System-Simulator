@@ -108,8 +108,12 @@ def open_cpu_scheduling():
         y_ticks = [10]
         y_labels = ["CPU"]
         
+        xticks = set()
         for i, block in enumerate(gantt_data):
             pid, start, duration = block
+            xticks.add(start)
+            xticks.add(start + duration)
+            
             if pid == "Idle":
                 ax.broken_barh([(start, duration)], (5, 10), facecolors='gray', edgecolor='black', hatch='/')
                 ax.text(start + duration/2, 10, "Idle", ha='center', va='center', color='white')
@@ -119,9 +123,13 @@ def open_cpu_scheduling():
                 ax.broken_barh([(start, duration)], (5, 10), facecolors=color, edgecolor='black')
                 ax.text(start + duration/2, 10, pid, ha='center', va='center', color='black')
 
+        xticks = sorted(list(xticks))
+        
         ax.set_ylim(0, 20)
         ax.set_xlim(0, gantt_data[-1][1] + gantt_data[-1][2] + 2 if gantt_data else 10)
         ax.set_xlabel('Time')
+        ax.set_xticks(xticks)
+        ax.set_xticklabels(xticks)
         ax.set_yticks(y_ticks)
         ax.set_yticklabels(y_labels)
         ax.grid(True, axis='x', linestyle='--', alpha=0.7)
