@@ -17,11 +17,25 @@ Prerequisites:
 
 To compile/run the program:
 ---------------------------
-1. Install Matplotlib by running:
-   pip install matplotlib
 
-2. Launch the main menu by running:
+You can run this application either from the source Python files or directly via the bundled executable.
+
+### Option 1: Run via Executable (No installation required)
+1. Navigate to the `dist/` folder in the project directory.
+2. Double-click `main.exe` to launch the OS Simulator immediately.
+
+### Option 2: Run via Python Source
+1. **Clone or Download** the project files to your local machine.
+2. **Install Dependencies**:
+   Ensure you have `matplotlib` installed. If not, run:
+   ```bash
+   pip install matplotlib
+   ```
+3. **Run the Application**:
+   Execute the `main.py` script from the terminal:
+   ```bash
    python main.py
+   ```
 
 
 Expected Outputs Based on Mock Datasets:
