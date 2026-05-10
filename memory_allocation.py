@@ -62,12 +62,28 @@ class MemoryAllocationFrame(ttk.Frame):
         self.tree.pack(fill='both', expand=True)
         self.tree.tag_configure('unallocated', background='#ffcccc')
 
+    def parse_memory_input(self, text):
+        items = text.split(",")
+        result = []
+        for item in items:
+            item = item.strip().upper()
+            if not item:
+                continue
+            if item.endswith("KB"):
+                val = float(item[:-2].strip())
+            elif item.endswith("B"):
+                val = float(item[:-1].strip()) / 1024.0
+            else:
+                val = float(item)
+            result.append(val)
+        return result
+
     def simulate(self):
         try:
-            blocks = [int(x.strip()) for x in self.entry_blocks.get().split(",") if x.strip()]
-            processes = [int(x.strip()) for x in self.entry_requests.get().split(",") if x.strip()]
+            blocks = self.parse_memory_input(self.entry_blocks.get())
+            processes = self.parse_memory_input(self.entry_requests.get())
         except ValueError:
-            messagebox.showerror("Error", "Please enter valid integers separated by commas.")
+            messagebox.showerror("Error", "Please enter valid numbers (e.g., 100, 2048B, 50KB) separated by commas.")
             return
 
         algo = self.algo_var.get()
