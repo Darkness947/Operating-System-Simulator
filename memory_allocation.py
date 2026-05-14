@@ -23,44 +23,21 @@ class MemoryAllocationFrame(ttk.Frame):
         input_frame = ttk.Frame(self, padding=10)
         input_frame.pack(fill='x')
 
-        ttk.Label(input_frame, text="Free Memory Blocks (comma-separated):").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(input_frame, text="Free Memory Blocks (KB, comma-separated):").grid(row=0, column=0, sticky='w', pady=5)
         self.entry_blocks = ttk.Entry(input_frame, width=50)
         self.entry_blocks.insert(0, "100, 500, 200, 300, 600")
         self.entry_blocks.grid(row=0, column=1, pady=5, padx=5)
 
-        ttk.Label(input_frame, text="Process Memory Requests (comma-separated):").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(input_frame, text="Process Memory Requests (KB, comma-separated):").grid(row=1, column=0, sticky='w', pady=5)
         self.entry_requests = ttk.Entry(input_frame, width=50)
         self.entry_requests.insert(0, "212, 417, 112, 426")
         self.entry_requests.grid(row=1, column=1, pady=5, padx=5)
 
-        ttk.Label(input_frame, text="Allocation Technique:").grid(row=2, column=0, sticky='w', pady=5)
-        algos = ["First Fit", "Best Fit", "Worst Fit"]
-        self.algo_var = tk.StringVar(value=algos[0])
-        algo_dropdown = ttk.Combobox(input_frame, textvariable=self.algo_var, values=algos, state="readonly", width=15)
-        algo_dropdown.grid(row=2, column=1, sticky='w', pady=5, padx=5)
+        ttk.Button(self, text="Run All Algorithms", command=self.simulate).pack(pady=10)
 
-        ttk.Button(self, text="Simulate", command=self.simulate).pack(pady=10)
-
-        # Result Table
-        res_frame = ttk.Frame(self, padding=10)
-        res_frame.pack(fill='both', expand=True)
-
-        columns = ("p_no", "p_size", "b_no", "b_size", "int_frag")
-        self.tree = ttk.Treeview(res_frame, columns=columns, show="headings")
-        self.tree.heading("p_no", text="Process No.")
-        self.tree.heading("p_size", text="Process Size")
-        self.tree.heading("b_no", text="Block No.")
-        self.tree.heading("b_size", text="Original Block Size")
-        self.tree.heading("int_frag", text="Internal Fragmentation")
-        
-        self.tree.column("p_no", width=80, anchor='center')
-        self.tree.column("p_size", width=100, anchor='center')
-        self.tree.column("b_no", width=80, anchor='center')
-        self.tree.column("b_size", width=120, anchor='center')
-        self.tree.column("int_frag", width=140, anchor='center')
-        
-        self.tree.pack(fill='both', expand=True)
-        self.tree.tag_configure('unallocated', background='#ffcccc')
+        # Notebook for tabs (one per algorithm)
+        self.notebook = ttk.Notebook(self)
+        self.notebook.pack(fill='both', expand=True, padx=10, pady=5)
 
     def parse_memory_input(self, text):
         items = text.split(",")
@@ -78,30 +55,52 @@ class MemoryAllocationFrame(ttk.Frame):
             result.append(val)
         return result
 
-    def simulate(self):
-        try:
-            blocks = self.parse_memory_input(self.entry_blocks.get())
-            processes = self.parse_memory_input(self.entry_requests.get())
-        except ValueError:
-            messagebox.showerror("Error", "Please enter valid numbers (e.g., 100, 2048B, 50KB) separated by commas.")
-            return
+    def _create_algo_tab(self, algo_name, blocks, processes):
+        """Create a tab for one allocation algorithm and run its simulation."""
+        tab_frame = ttk.Frame(self.notebook)
+        self.notebook.add(tab_frame, text=algo_name)
 
-        algo = self.algo_var.get()
-        mem_blocks = [{'id': i+1, 'size': s, 'original': s} for i, s in enumerate(blocks)]
+        # Result Table
+        res_frame = ttk.Frame(tab_frame, padding=10)
+        res_frame.pack(fill='both', expand=True)
+
+        columns = ("p_no", "p_size", "b_no", "b_size", "int_frag")
+        tree = ttk.Treeview(res_frame, columns=columns, show="headings")
+        tree.heading("p_no", text="Process No.")
+        tree.heading("p_size", text="Process Size (KB)")
+        tree.heading("b_no", text="Block No.")
+        tree.heading("b_size", text="Original Block Size (KB)")
+        tree.heading("int_frag", text="Internal Fragmentation (KB)")
         
-        for item in self.tree.get_children():
-            self.tree.delete(item)
+        tree.column("p_no", width=80, anchor='center')
+        tree.column("p_size", width=120, anchor='center')
+        tree.column("b_no", width=80, anchor='center')
+        tree.column("b_size", width=150, anchor='center')
+        tree.column("int_frag", width=170, anchor='center')
+
+        scrollbar = ttk.Scrollbar(res_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        tree.tag_configure('unallocated', background='#ffcccc')
+
+        # Run the algorithm
+        mem_blocks = [{'id': i+1, 'size': s, 'original': s} for i, s in enumerate(blocks)]
+
+        total_allocated = 0
+        total_fragmentation = 0
 
         for i, p_size in enumerate(processes):
             allocated_block = None
             
-            if algo == "First Fit":
+            if algo_name == "First Fit":
                 for blk in mem_blocks:
                     if blk['size'] >= p_size:
                         allocated_block = blk
                         break
                         
-            elif algo == "Best Fit":
+            elif algo_name == "Best Fit":
                 best_idx = -1
                 min_diff = float('inf')
                 for j, blk in enumerate(mem_blocks):
@@ -112,7 +111,7 @@ class MemoryAllocationFrame(ttk.Frame):
                 if best_idx != -1:
                     allocated_block = mem_blocks[best_idx]
                     
-            elif algo == "Worst Fit":
+            elif algo_name == "Worst Fit":
                 worst_idx = -1
                 max_diff = -1
                 for j, blk in enumerate(mem_blocks):
@@ -125,7 +124,30 @@ class MemoryAllocationFrame(ttk.Frame):
 
             if allocated_block:
                 int_frag = allocated_block['size'] - p_size
-                self.tree.insert("", "end", values=(f"P{i+1}", p_size, allocated_block['id'], allocated_block['original'], int_frag))
-                allocated_block['size'] -= p_size
+                tree.insert("", "end", values=(f"P{i+1}", f"{p_size}", allocated_block['id'], f"{allocated_block['original']}", f"{int_frag}"))
+                allocated_block['size'] = 0
+                total_allocated += 1
+                total_fragmentation += int_frag
             else:
-                self.tree.insert("", "end", values=(f"P{i+1}", p_size, "Not Allocated", "-", "-"), tags=('unallocated',))
+                tree.insert("", "end", values=(f"P{i+1}", f"{p_size}", "Not Allocated", "-", "-"), tags=('unallocated',))
+
+        # Summary label
+        summary = f"Allocated: {total_allocated}/{len(processes)} processes | Total Internal Fragmentation: {total_fragmentation:.1f} KB"
+        summary_lbl = ttk.Label(tab_frame, text=summary, font=("Segoe UI", 11, "bold"))
+        summary_lbl.pack(pady=5)
+
+    def simulate(self):
+        try:
+            blocks = self.parse_memory_input(self.entry_blocks.get())
+            processes = self.parse_memory_input(self.entry_requests.get())
+        except ValueError:
+            messagebox.showerror("Error", "Please enter valid numbers (e.g., 100, 2048B, 50KB) separated by commas.")
+            return
+
+        # Clear old tabs
+        for tab in self.notebook.tabs():
+            self.notebook.forget(tab)
+
+        # Run all three algorithms
+        for algo_name in ["First Fit", "Best Fit", "Worst Fit"]:
+            self._create_algo_tab(algo_name, blocks, processes)
