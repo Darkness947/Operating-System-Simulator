@@ -398,6 +398,9 @@ class CPUSchedulingFrame(ttk.Frame):
             burst_val = burst_e.get().strip()
             
             arr = int(arr_val) if arr_val else 0
+            if arr < 0:
+                messagebox.showerror("Error", f"Arrival time cannot be negative for P{i+1}")
+                return
             if not burst_val:
                 messagebox.showerror("Error", f"Burst time missing for P{i+1}")
                 return
