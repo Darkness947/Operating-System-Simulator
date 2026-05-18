@@ -144,6 +144,16 @@ class MemoryAllocationFrame(ttk.Frame):
             messagebox.showerror("Error", "Please enter valid numbers (e.g., 100, 2048B, 50KB) separated by commas.")
             return
 
+        if any(v < 0 for v in blocks):
+            messagebox.showerror("Error", "Memory block sizes cannot be negative.")
+            return
+        if any(v < 0 for v in processes):
+            messagebox.showerror("Error", "Process memory requests cannot be negative.")
+            return
+        if not blocks or not processes:
+            messagebox.showerror("Error", "Please provide at least one memory block and one process request.")
+            return
+
         # Clear old tabs
         for tab in self.notebook.tabs():
             self.notebook.forget(tab)
